@@ -3,8 +3,8 @@
   "name": "Graph 3D Plus",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "3D graph view with tags, attachments, and overlays.",
-  "author": "Your Name",
-  "authorUrl": "",
+  "description": "3D graph view with tags, attachments, and in-graph settings.",
+  "author": "fird23",
+  "authorUrl": "https://github.com/fird23",
   "isDesktopOnly": true
 }
