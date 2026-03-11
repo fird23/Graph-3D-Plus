@@ -39,16 +39,21 @@ const FOLDER_COLORS = [
   '#a0d18f',
 ];
 
-function normalizeTag(tag) {
+function normalizeTag(tag: unknown): string | null {
   if (!tag) return null;
-  let t = String(tag).trim();
+  let raw: unknown = tag;
+  if (typeof tag === 'object') {
+    const t = tag as { tag?: unknown; name?: unknown; value?: unknown };
+    raw = t.tag ?? t.name ?? t.value ?? tag;
+  }
+  let t = String(raw).trim();
   if (!t) return null;
   if (t.startsWith('#')) t = t.slice(1);
   return '#' + t;
 }
 
-function extractTags(app, file) {
-  const tags = new Set();
+function extractTags(app, file): Set<string> {
+  const tags = new Set<string>();
   const cache = app.metadataCache.getFileCache(file);
   if (cache?.tags) {
     for (const t of cache.tags) {
@@ -70,7 +75,7 @@ function extractTags(app, file) {
   return tags;
 }
 
-function topFolder(path) {
+function topFolder(path: string): string {
   if (!path) return '';
   const idx = path.indexOf('/');
   if (idx === -1) return '';
@@ -119,9 +124,8 @@ class Graph3DView extends ItemView {
     return 'scatter-chart';
   }
 
-  async onOpen() {
+  onOpen() {
     this.contentEl.addClass('graph3d-view');
-    this.contentEl.style.position = 'relative';
 
     this.container = this.contentEl.createDiv({ cls: 'graph3d-container' });
     this.canvas = this.container.createEl('canvas', { cls: 'graph3d-canvas' });
@@ -150,7 +154,7 @@ class Graph3DView extends ItemView {
     this.startRenderLoop();
   }
 
-  async onClose() {
+  onClose() {
     if (this.resizeObserver) this.resizeObserver.disconnect();
     if (this.rafId) cancelAnimationFrame(this.rafId);
   }
@@ -182,18 +186,18 @@ class Graph3DView extends ItemView {
     new Setting(body)
       .setName('Искать')
       .addText((t) =>
-        t.setValue(s.searchText).onChange(async (v) => {
+        t.setValue(s.searchText).onChange((v) => {
           s.searchText = v || '';
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
           this.applyFiltersOnly();
         })
       );
     new Setting(body)
       .setName('Скрывать не совпадающие')
       .addToggle((t) =>
-        t.setValue(s.searchHideNonMatches).onChange(async (v) => {
+        t.setValue(s.searchHideNonMatches).onChange((v) => {
           s.searchHideNonMatches = v;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
           this.applyFiltersOnly();
         })
       );
@@ -202,9 +206,9 @@ class Graph3DView extends ItemView {
     new Setting(body)
       .setName('Теги')
       .addToggle((t) =>
-        t.setValue(s.showTags).onChange(async (v) => {
+        t.setValue(s.showTags).onChange((v) => {
           s.showTags = v;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
           this.plugin.rebuildAll();
         })
       );
@@ -212,9 +216,9 @@ class Graph3DView extends ItemView {
     new Setting(body)
       .setName('Вложения (не .md)')
       .addToggle((t) =>
-        t.setValue(s.showAssets).onChange(async (v) => {
+        t.setValue(s.showAssets).onChange((v) => {
           s.showAssets = v;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
           this.plugin.rebuildAll();
         })
       );
@@ -222,9 +226,9 @@ class Graph3DView extends ItemView {
     new Setting(body)
       .setName('Скрывать узлы без связей')
       .addToggle((t) =>
-        t.setValue(s.hideIsolated).onChange(async (v) => {
+        t.setValue(s.hideIsolated).onChange((v) => {
           s.hideIsolated = v;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
           this.applyFiltersOnly();
         })
       );
@@ -233,27 +237,27 @@ class Graph3DView extends ItemView {
     new Setting(body)
       .setName('Линии связей')
       .addToggle((t) =>
-        t.setValue(s.showEdges).onChange(async (v) => {
+        t.setValue(s.showEdges).onChange((v) => {
           s.showEdges = v;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         })
       );
 
     new Setting(body)
       .setName('Линии только при наведении')
       .addToggle((t) =>
-        t.setValue(s.showOnlyHoverEdges).onChange(async (v) => {
+        t.setValue(s.showOnlyHoverEdges).onChange((v) => {
           s.showOnlyHoverEdges = v;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         })
       );
 
     new Setting(body)
       .setName('Цвета по папкам')
       .addToggle((t) =>
-        t.setValue(s.colorByFolder).onChange(async (v) => {
+        t.setValue(s.colorByFolder).onChange((v) => {
           s.colorByFolder = v;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
           this.buildFolderColors();
           this.renderSettingsPanel();
         })
@@ -267,9 +271,9 @@ class Graph3DView extends ItemView {
             .setLimits(min, max, step)
             .setValue(s[key])
             .setDynamicTooltip()
-            .onChange(async (v) => {
+            .onChange((v) => {
               s[key] = v;
-              await this.plugin.saveSettings();
+              void this.plugin.saveSettings();
             })
         );
     };
@@ -401,8 +405,9 @@ class Graph3DView extends ItemView {
       if (s.showTags) {
         const tags = extractTags(this.app, file);
         for (const tag of tags) {
-          const tagId = `tag:${tag}`;
-          addNode(tagId, { label: tag, kind: 'tag', folder: '' });
+          const tagStr = String(tag);
+          const tagId = 'tag:' + tagStr;
+          addNode(tagId, { label: tagStr, kind: 'tag', folder: '' });
           addEdge(file.path, tagId, 'tag');
         }
       }
@@ -667,7 +672,7 @@ class Graph3DView extends ItemView {
       if (node) node.pinned = false;
       if (this.dragMoved < 6 && node?.file && e?.button === 0) {
         const leaf = this.app.workspace.getLeaf('tab') || this.app.workspace.getLeaf(false);
-        leaf.openFile(node.file, { active: true });
+        void leaf.openFile(node.file, { active: true });
       }
     }
     this.isDragging = false;
@@ -860,20 +865,22 @@ class Graph3DView extends ItemView {
 }
 
 class Graph3DPlusPlugin extends Plugin {
-  async onload() {
-    console.log('[Graph 3D Plus] loaded');
-    await this.loadSettings();
+  onload() {
+    this.settings = { ...DEFAULT_SETTINGS };
+    void this.loadSettings().then(() => this.rebuildAll());
 
     this.registerView(VIEW_TYPE, (leaf) => new Graph3DView(leaf, this.app, this));
 
     this.addRibbonIcon('scatter-chart', 'Graph 3D Plus', () => {
-      this.activateView();
+      void this.activateView();
     });
 
     this.addCommand({
-      id: 'open-graph-3d-plus',
-      name: 'Open Graph 3D Plus',
-      callback: () => this.activateView(),
+      id: 'open-graph',
+      name: 'Open graph',
+      callback: () => {
+        void this.activateView();
+      },
     });
 
     const rebuild = () => this.rebuildAll();
@@ -887,8 +894,8 @@ class Graph3DPlusPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
 
-  async saveSettings() {
-    await this.saveData(this.settings);
+  saveSettings() {
+    return this.saveData(this.settings);
   }
 
   rebuildAll() {
@@ -899,15 +906,16 @@ class Graph3DPlusPlugin extends Plugin {
     }
   }
 
-  async onunload() {
+  onunload() {
     this.app.workspace.getLeavesOfType(VIEW_TYPE).forEach((leaf) => leaf.detach());
   }
 
-  async activateView() {
+  activateView() {
     let leaf = this.app.workspace.getLeaf('tab');
     if (!leaf) leaf = this.app.workspace.getLeaf(false);
-    await leaf.setViewState({ type: VIEW_TYPE, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    void leaf.setViewState({ type: VIEW_TYPE, active: true }).then(() => {
+      this.app.workspace.revealLeaf(leaf);
+    });
   }
 }
 
