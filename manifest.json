@@ -1,0 +1,10 @@
+﻿{
+  "id": "graph-3d-plus",
+  "name": "Graph 3D Plus",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "3D graph view with tags, attachments, and overlays.",
+  "author": "Your Name",
+  "authorUrl": "",
+  "isDesktopOnly": true
+}
