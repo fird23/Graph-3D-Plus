@@ -44,9 +44,10 @@ function normalizeTag(tag: unknown): string | null {
   let raw: unknown = tag;
   if (typeof tag === 'object') {
     const t = tag as { tag?: unknown; name?: unknown; value?: unknown };
-    raw = t.tag ?? t.name ?? t.value ?? tag;
+    raw = t.tag ?? t.name ?? t.value ?? null;
   }
-  let t = String(raw).trim();
+  if (typeof raw !== 'string') return null;
+  let t = raw.trim();
   if (!t) return null;
   if (t.startsWith('#')) t = t.slice(1);
   return '#' + t;
@@ -117,7 +118,7 @@ class Graph3DView extends ItemView {
   }
 
   getDisplayText() {
-    return 'Graph 3D Plus';
+    return 'Graph 3D plus';
   }
 
   getIcon() {
@@ -871,7 +872,7 @@ class Graph3DPlusPlugin extends Plugin {
 
     this.registerView(VIEW_TYPE, (leaf) => new Graph3DView(leaf, this.app, this));
 
-    this.addRibbonIcon('scatter-chart', 'Graph 3D Plus', () => {
+    this.addRibbonIcon('scatter-chart', 'Graph 3D plus', () => {
       void this.activateView();
     });
 
