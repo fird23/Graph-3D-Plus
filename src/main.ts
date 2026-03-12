@@ -131,7 +131,7 @@ class Graph3DView extends ItemView {
     this.container = this.contentEl.createDiv({ cls: 'graph3d-container' });
     this.canvas = this.container.createEl('canvas', { cls: 'graph3d-canvas' });
     this.hint = this.container.createDiv({ cls: 'graph3d-hint' });
-    this.hint.setText('ЛКМ: вращение/перетаскивание, ПКМ: перемещение, колесо: зум');
+    this.hint.setText('Левая кнопка: вращение/перетаскивание, правая кнопка: перемещение, колесо: зум');
 
     this.settingsPanel = this.container.createDiv({ cls: 'graph3d-settings-panel is-hidden' });
     this.renderSettingsPanel();
@@ -868,7 +868,7 @@ class Graph3DView extends ItemView {
 class Graph3DPlusPlugin extends Plugin {
   onload() {
     this.settings = { ...DEFAULT_SETTINGS };
-    void this.loadSettings().then(() => this.rebuildAll());
+    void this.loadSettings().then(() => this.rebuildAll()).catch(() => {});
 
     this.registerView(VIEW_TYPE, (leaf) => new Graph3DView(leaf, this.app, this));
 
@@ -916,7 +916,7 @@ class Graph3DPlusPlugin extends Plugin {
     if (!leaf) leaf = this.app.workspace.getLeaf(false);
     void leaf.setViewState({ type: VIEW_TYPE, active: true }).then(() => {
       this.app.workspace.revealLeaf(leaf);
-    });
+    }).catch(() => {});
   }
 }
 
